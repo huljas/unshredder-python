@@ -10,13 +10,9 @@ class Slice:
         self.start = start
         self.end = end
     
-    def p(self): 
-        return "Slice(", self.start, " ", self.end, ")"
-
 # Get single pixel as rgba		
 def get_pixel(x, y):
-    pixel = data[y * width + x]
-    return pixel
+    return data[y * width + x]
 
 # Eucledian distance of two points	
 def distance(p1, p2):
@@ -54,12 +50,36 @@ def find_prev(a_slice):
             min_distance = distance
     return best_slice	
 
+# Find the slice width that correlates with high distances
+def find_slice_width():
+    rBest = 0
+    wBest = 0
+    dm = []
+    for x in range(0,width-1):
+        dm.append((x,slice_distance(x,x+1)))
+    dm = sorted(dm, key=lambda d: d[1], reverse=True)
+    for w in range(2,100):
+        m = width / w
+        p = 0
+        for i in range(0, m):
+            index = dm[i][0] + 1
+            if index % w == 0:
+                p=p+1
+        r = float(p) / m
+        if r > rBest:
+            rBest = r
+            wBest = w
+    return wBest                    
+
 # Load our image and slice it!
 image = Image.open('TokyoPanoramaShredded.png')
 slice_count = 20
 width, height = image.size
-slice_width = width / slice_count
 data = image.getdata() # This gets pixel data	
+slice_width = find_slice_width()
+
+print "Using slice width ",slice_width," to unshred"
+
 slices = []
 
 # We know the borders for now 
@@ -90,6 +110,7 @@ for slice in slices:
 # and copy a region into the new image
 unshredded = Image.new('RGBA', image.size)
 curr = first
+print "Writing image - first index:",first.start,", last index:",last.end
 i = 0
 while curr != None:
     x1, y1 = curr.start, 0
