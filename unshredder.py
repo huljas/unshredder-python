@@ -16,17 +16,11 @@ def get_pixel(x, y):
 
 # Eucledian distance of two points	
 def distance(p1, p2):
-    ss = 0
-    for pp1, pp2 in zip(p1,p2):
-        ss += (pp1 - pp2)**2
-    return sqrt(ss)
+    return sqrt( reduce( lambda s, p: s + (p[0]-p[1])**2, zip(p1[:2],p2[:2]), 0) );
 
 # Distance of two columns of pixels	
 def slice_distance(x1, x2):
-    d = 0
-    for y in range(height):
-        d += distance(get_pixel(x1,y), get_pixel(x2,y))
-    return d
+    return sum( distance( get_pixel(x1,y),get_pixel(x2,y) ) for y in range(height) ) / height     
 
 # Find a slice that is best match for given slices end	
 def find_next(a_slice):
@@ -54,22 +48,13 @@ def find_prev(a_slice):
 def find_slice_width():
     rBest = 0
     wBest = 0
-    dm = []
-    for x in range(0,width-1):
-        dm.append((x,slice_distance(x,x+1)))
-    dm = sorted(dm, key=lambda d: d[1], reverse=True)
-    for w in range(2,100):
-        m = width / w
-        p = 0
-        for i in range(0, m):
-            index = dm[i][0] + 1
-            if index % w == 0:
-                p=p+1
-        r = float(p) / m
-        if r > rBest:
-            rBest = r
-            wBest = w
-    return wBest                    
+    dm = sorted( [(x, slice_distance(x,x+1)) for x in range(0,width-1)],  key=lambda d: d[1], reverse=True)
+    for w in range(2,width/2):
+        m = width / w - 1
+        p = len( filter(lambda dd: (dd[0]+1) % w == 0, dm[:m]) )
+        if p / float(m) > 0.6:
+            return w
+    return 10        
 
 # Load our image and slice it!
 image = Image.open('TokyoPanoramaShredded.png')
